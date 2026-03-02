@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepFocusPomo - Pomodoro Timer for Focus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Left Ad -->
+    <aside class="ad-area ad-left">
+      <div class="ad-placeholder">AD</div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Left Column: Timer -->
+      <section class="timer-section">
+        <div class="timer-container">
+          <svg class="timer-svg" viewBox="0 0 200 200">
+            <circle class="timer-bg" cx="100" cy="100" r="90" />
+            <circle id="timer-progress" class="timer-progress" cx="100" cy="100" r="90" />
+          </svg>
+          <div class="timer-display">
+            <span id="timer-time" class="timer-time">25:00</span>
+            <span id="timer-mode" class="timer-mode">Focus</span>
+          </div>
+        </div>
+        <div class="timer-controls">
+          <button id="timer-start-btn" class="btn btn-start">Start Timer</button>
+          <button id="timer-pause-btn" class="btn btn-pause hidden">Pause</button>
+          <button id="timer-reset-btn" class="btn btn-reset">Reset</button>
+        </div>
+        <div class="timer-stats">
+          <span class="pomo-today">Today: <span id="total-pomo-count">0</span> pomodoros</span>
+        </div>
+      </section>
+
+      <!-- Right Column: Tasks -->
+      <section class="tasks-section">
+        <!-- Current Task -->
+        <div class="current-task-card">
+          <h2 class="section-title">Current Task</h2>
+          <div id="current-task-content" class="current-task-content">
+            <p id="task-title" class="task-title">Add a task to get started</p>
+            <p id="task-note" class="task-note hidden"></p>
+            <span id="task-pomo-count" class="task-pomo-badge hidden">🍅 0</span>
+          </div>
+          <div class="current-task-actions">
+            <button id="done-btn" class="btn btn-done">Done</button>
+            <button id="skip-btn" class="btn btn-skip">Skip</button>
+            <button id="edit-btn" class="btn btn-edit-small">Edit</button>
+          </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="task-list-card">
+          <div class="task-list-header">
+            <h2 class="section-title">Task Queue <span id="task-list-count" class="task-count">0</span></h2>
+            <button id="add-btn" class="btn-add">+ Add</button>
+          </div>
+          <ul id="task-list" class="task-list">
+            <li class="task-list-empty">No tasks yet</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Ad -->
+    <aside class="ad-area ad-right">
+      <div class="ad-placeholder">AD</div>
+    </aside>
+
+    <!-- Quick Add Overlay -->
+    <div id="add-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h3 class="overlay-title">Add Task</h3>
+        <input type="text" id="add-title" class="input" placeholder="What needs to be done?" autofocus>
+        <input type="text" id="add-note" class="input input-note" placeholder="Notes (optional)">
+        <label class="checkbox-label">
+          <input type="checkbox" id="add-first">
+          Make this top priority
+        </label>
+        <div class="overlay-actions">
+          <button id="add-cancel-btn" class="btn btn-cancel">Cancel</button>
+          <button id="add-save-btn" class="btn btn-save">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Overlay -->
+    <div id="edit-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h3 class="overlay-title">Edit Task</h3>
+        <input type="text" id="edit-title" class="input" placeholder="Task name">
+        <input type="text" id="edit-note" class="input input-note" placeholder="Notes (optional)">
+        <div class="overlay-actions">
+          <button id="edit-cancel-btn" class="btn btn-cancel">Cancel</button>
+          <button id="edit-save-btn" class="btn btn-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Overlay -->
+    <div id="log-overlay" class="overlay hidden">
+      <div class="overlay-content log-content">
+        <div class="overlay-header">
+          <h3 class="overlay-title">Completed Today</h3>
+          <button id="log-close-btn" class="btn-close">&times;</button>
+        </div>
+        <ul id="log-list" class="log-list"></ul>
+      </div>
+    </div>
+
+    <!-- Completed Today Button (floating) -->
+    <button id="completed-today-btn" class="completed-btn">
+      Done: <span id="completed-count">0</span>
+    </button>
+
+    <!-- Positive Message -->
+    <div id="positive-message" class="positive-message hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
