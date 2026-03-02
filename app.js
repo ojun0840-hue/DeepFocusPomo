@@ -75,6 +75,7 @@
     elements.completedCount = document.getElementById('completed-count');
 
     elements.positiveMessage = document.getElementById('positive-message');
+    elements.pipBtn = document.getElementById('pip-btn');
   }
 
   // ============== Positive Messages ==============
@@ -180,6 +181,11 @@
 
     if (elements.totalPomoCount) {
       elements.totalPomoCount.textContent = state.todayPomodoros;
+    }
+
+    // Update PiP window if open
+    if (window._updatePipDisplay) {
+      window._updatePipDisplay();
     }
   }
 
@@ -290,6 +296,11 @@
     renderCurrentTask();
     renderTaskList();
     renderCompletedCount();
+
+    // Update PiP if open
+    if (window._updatePipDisplay) {
+      window._updatePipDisplay();
+    }
   }
 
   function renderCurrentTask() {
@@ -495,6 +506,153 @@
 
   // ============== Drag and Drop ==============
   let draggedItem = null;
+  let pipWindow = null;
+
+  // ============== Picture-in-Picture ==============
+  async function openPictureInPicture() {
+    if (!('documentPictureInPicture' in window)) {
+      alert('Picture-in-Picture is not supported in this browser. Try Chrome 116+.');
+      return;
+    }
+
+    try {
+      pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 320,
+        height: 200
+      });
+
+      const pipDoc = pipWindow.document;
+      pipDoc.head.innerHTML = `
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 16px;
+            user-select: none;
+          }
+          .pip-timer {
+            font-size: 3.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+          }
+          .pip-mode {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 8px;
+            color: #4ade80;
+          }
+          .pip-mode.break { color: #60a5fa; }
+          .pip-mode.long-break { color: #a78bfa; }
+          .pip-task {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-top: 12px;
+            text-align: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .pip-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+          }
+          .pip-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+          }
+          .pip-btn-start { background: #4ade80; color: #000; }
+          .pip-btn-pause { background: #f59e0b; color: #000; }
+          .pip-btn-reset { background: #374151; color: #fff; }
+        </style>
+      `;
+
+      pipDoc.body.innerHTML = `
+        <div class="pip-timer" id="pip-time">25:00</div>
+        <div class="pip-mode" id="pip-mode">Focus</div>
+        <div class="pip-task" id="pip-task">No task</div>
+        <div class="pip-controls">
+          <button class="pip-btn pip-btn-start" id="pip-start">Start</button>
+          <button class="pip-btn pip-btn-reset" id="pip-reset">Reset</button>
+        </div>
+      `;
+
+      // Get PiP elements
+      const pipTime = pipDoc.getElementById('pip-time');
+      const pipMode = pipDoc.getElementById('pip-mode');
+      const pipTask = pipDoc.getElementById('pip-task');
+      const pipStart = pipDoc.getElementById('pip-start');
+      const pipReset = pipDoc.getElementById('pip-reset');
+
+      // Update PiP display
+      function updatePipDisplay() {
+        if (!pipWindow || pipWindow.closed) return;
+
+        pipTime.textContent = formatTime(timer.remainingSeconds);
+
+        const modeText = { 'idle': 'Focus', 'work': 'Working', 'break': 'Break', 'longBreak': 'Long Break' };
+        pipMode.textContent = modeText[timer.mode] || 'Focus';
+        pipMode.className = 'pip-mode';
+        if (timer.mode === 'break') pipMode.classList.add('break');
+        if (timer.mode === 'longBreak') pipMode.classList.add('long-break');
+
+        const task = state.queue[0];
+        pipTask.textContent = task ? task.title : 'No task';
+
+        if (timer.isRunning) {
+          pipStart.textContent = 'Pause';
+          pipStart.className = 'pip-btn pip-btn-pause';
+        } else {
+          pipStart.textContent = timer.mode === 'idle' ? 'Start' : 'Resume';
+          pipStart.className = 'pip-btn pip-btn-start';
+        }
+      }
+
+      // Event listeners for PiP
+      pipStart.addEventListener('click', () => {
+        if (timer.isRunning) {
+          pauseTimer();
+        } else {
+          startTimer();
+        }
+        updatePipDisplay();
+      });
+
+      pipReset.addEventListener('click', () => {
+        resetTimer();
+        updatePipDisplay();
+      });
+
+      // Initial update
+      updatePipDisplay();
+
+      // Store update function globally for timer updates
+      window._updatePipDisplay = updatePipDisplay;
+
+      // Clean up on close
+      pipWindow.addEventListener('pagehide', () => {
+        pipWindow = null;
+        window._updatePipDisplay = null;
+      });
+
+    } catch (error) {
+      console.error('PiP error:', error);
+    }
+  }
 
   function handleDragStart(e) {
     draggedItem = e.target.closest('.task-list-item');
@@ -563,6 +721,7 @@
     if (elements.timerStartBtn) elements.timerStartBtn.addEventListener('click', startTimer);
     if (elements.timerPauseBtn) elements.timerPauseBtn.addEventListener('click', pauseTimer);
     if (elements.timerResetBtn) elements.timerResetBtn.addEventListener('click', resetTimer);
+    if (elements.pipBtn) elements.pipBtn.addEventListener('click', openPictureInPicture);
 
     // Task actions
     if (elements.doneBtn) elements.doneBtn.addEventListener('click', completeCurrentTask);
